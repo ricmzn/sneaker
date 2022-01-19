@@ -111,8 +111,13 @@ func (s *serverSession) publish(event string, data interface{}) error {
 	}
 
 	s.Lock()
-	for _, sub := range s.subscribers {
-		sub <- encoded
+	for id, sub := range s.subscribers {
+		select {
+		case sub <- encoded:
+			continue
+		default:
+			log.Printf("[session:%v] warning: subscriber %v channel full", s.server.Name, id)
+		}
 	}
 	s.Unlock()
 	return nil
