@@ -32,6 +32,7 @@ func newHttpServer(config *Config) *httpServer {
 func (h *httpServer) getServerMetadata(server *TacViewServerConfig) serverMetadata {
 	result := serverMetadata{
 		Name:            server.Name,
+		RefreshRate:     server.RadarRefreshRate,
 		GroundUnitModes: getGroundUnitModes(server),
 		GCIs:            []gciMetadata{},
 	}
@@ -69,6 +70,7 @@ func (h *httpServer) getServerList(w http.ResponseWriter, r *http.Request) {
 
 type serverMetadata struct {
 	Name            string           `json:"name"`
+	RefreshRate     int64            `json:"refresh_rate"`
 	GroundUnitModes []string         `json:"ground_unit_modes"`
 	Players         []PlayerMetadata `json:"players"`
 	GCIs            []gciMetadata    `json:"gcis"`

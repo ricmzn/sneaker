@@ -8,6 +8,7 @@ import { createTracks, updateTracks } from "./TrackStore";
 
 export type Server = {
   name: string;
+  refresh_rate: number;
   ground_unit_modes: Array<GroundUnitMode>;
 };
 
@@ -22,6 +23,7 @@ export type ServerStoreData = {
   offset: number;
   sessionId: string | null;
   selectedEntityId: number | null;
+  refreshRate: number;
 };
 
 export const serverStore = create<ServerStoreData>(() => {
@@ -31,6 +33,7 @@ export const serverStore = create<ServerStoreData>(() => {
     offset: 0,
     sessionId: null,
     selectedEntityId: null,
+    refreshRate: 0,
   };
 });
 
@@ -59,6 +62,7 @@ function runSneakerClient(server: Server | null) {
               entities: Immutable.Map<number, Entity>(
                 event.d.objects?.map((obj) => [obj.id, new Entity(obj)]) || []
               ),
+              refreshRate: server.refresh_rate,
             };
           });
           createTracks(event);
