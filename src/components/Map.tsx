@@ -16,7 +16,7 @@ import { DCSMap } from "../dcs/maps/DCSMap";
 import { useKeyPress } from "../hooks/useKeyPress";
 import useRenderGeometry from "../hooks/useRenderGeometry";
 import useRenderGroundUnit from "../hooks/useRenderGroundUnits";
-import extrapolate from "../lib/extrapolate";
+import extrapolate, { ExtrapolationState } from "../lib/extrapolate";
 import { alertStore } from "../stores/AlertStore";
 import { serverStore, setSelectedEntityId } from "../stores/ServerStore";
 import { settingsStore } from "../stores/SettingsStore";
@@ -582,6 +582,8 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
 
   const stateTracks = trackStore().tracks;
 
+  const [extrapolationState] = useState<ExtrapolationState>({});
+
   // Note: useRaf's default duration of 1e12 doesn't ever trigger on Firefox,
   // so use a (safe) lower value such as 1e11 to activate it instead
   const extrapolateTracks = settings.map.extrapolateTracks;
@@ -589,7 +591,11 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
   const radarRefreshRate = serverStore().refreshRate;
   const [entities, tracks, selectedEntity] = useMemo(() => {
     if (extrapolateTracks) {
-      const [entities, tracks] = extrapolate([stateEntities, stateTracks], radarRefreshRate);
+      const [entities, tracks] = extrapolate(
+        [stateEntities, stateTracks],
+        extrapolationState,
+        radarRefreshRate,
+      );
       if (stateSelectedEntity) {
         // Extrapolated data, and selected entity needs to be updated
         return [entities, tracks, entities.get(stateSelectedEntity.id)];
@@ -599,7 +605,7 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
     }
     // No extrapolation, render data from server
     return [stateEntities, stateTracks, stateSelectedEntity];
-  }, [animationFrame, stateTracks]);
+  }, [animationFrame, extrapolateTracks, stateTracks]);
 
   // TODO: server should set coalition
   const bullsEntity = entities.find(
