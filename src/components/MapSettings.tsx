@@ -85,6 +85,29 @@ export function MapSettings(): JSX.Element {
         </label>
         <label className="flex flex-row items-center">
           <div className="flex flex-col">
+            <h3 className="font-bold select-none">Extrapolate Tracks</h3>
+            <p className="text-sm text-gray-700 select-none">
+              Tries to predict where radar tracks will be before the next scan.
+              <br />
+              This is CPU-heavy and can cause inaccuracies, but makes the
+              display smoother.
+            </p>
+          </div>
+          <BigCheckbox
+            toggle={() =>
+              settingsStore.setState({
+                map: {
+                  ...mapSettings,
+                  extrapolateTracks: !mapSettings.extrapolateTracks,
+                },
+              })
+            }
+            checked={mapSettings.extrapolateTracks !== false}
+            className="ml-auto"
+          />
+        </label>
+        <label className="flex flex-row items-center">
+          <div className="flex flex-col">
             <h3 className="font-bold select-none">
               Previous Ping Display Count
             </h3>

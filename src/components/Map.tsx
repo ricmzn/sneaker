@@ -1,3 +1,4 @@
+import Immutable from "immutable";
 import * as maptalks from "maptalks";
 import ms from "milsymbol";
 import React, {
@@ -8,21 +9,25 @@ import React, {
   useState,
 } from "react";
 import { renderToString } from "react-dom/server";
+import useRaf from "react-use/lib/useRaf";
 import { FONT_FAMILY } from "../Constants";
 import { planes } from "../dcs/aircraft";
 import { DCSMap } from "../dcs/maps/DCSMap";
 import { useKeyPress } from "../hooks/useKeyPress";
 import useRenderGeometry from "../hooks/useRenderGeometry";
 import useRenderGroundUnit from "../hooks/useRenderGroundUnits";
+import extrapolate from "../lib/extrapolate";
 import { alertStore } from "../stores/AlertStore";
 import { serverStore, setSelectedEntityId } from "../stores/ServerStore";
 import { settingsStore } from "../stores/SettingsStore";
 import {
+  EntityTrackPing,
   estimatedAltitudeRate,
   estimatedSpeed,
   isTrackVisible,
   trackStore,
 } from "../stores/TrackStore";
+import { Entity } from "../types/entity";
 import {
   computeBRAA,
   getBearingMap,
@@ -59,9 +64,13 @@ function pruneLayer(
 
 function MapRadarTracks({
   map,
+  entities,
+  tracks,
   selectedEntityId,
 }: {
   map: maptalks.Map;
+  entities: Immutable.Map<number, Entity>,
+  tracks: Immutable.Map<number, EntityTrackPing[]>,
   selectedEntityId: number | null;
 }) {
   const radarTracks = trackStore((state) => state.tracks.entrySeq().toArray());
@@ -71,9 +80,6 @@ function MapRadarTracks({
 
   useEffect(() => {
     const settings = settingsStore.getState();
-    const entities = serverStore.getState().entities;
-    const tracks = trackStore.getState().tracks;
-
     const vvLayer = map.getLayer("track-vv") as maptalks.VectorLayer;
     const trailLayer = map.getLayer("track-trails") as maptalks.VectorLayer;
     const iconLayer = map.getLayer("track-icons") as maptalks.VectorLayer;
@@ -104,7 +110,7 @@ function MapRadarTracks({
       }
     }
 
-    for (const [entityId, track] of radarTracks) {
+    for (const [entityId, track] of tracks) {
       const trackVisible = isTrackVisible(track);
       const entity = entities.get(entityId);
       if (!entity) {
@@ -567,10 +573,33 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scratchPadOpen, setScratchPadOpen] = useState(false);
 
-  const [entities, selectedEntity] = serverStore((state) => [
+  const [stateEntities, stateSelectedEntity] = serverStore((state) => [
     state.entities,
     state.selectedEntityId && state.entities.get(state.selectedEntityId),
   ]);
+
+  const settings = settingsStore();
+
+  const stateTracks = trackStore().tracks;
+
+  // Note: useRaf's default duration of 1e12 doesn't ever trigger on Firefox,
+  // so use a (safe) lower value such as 1e11 to activate it instead
+  const extrapolateTracks = settings.map.extrapolateTracks;
+  const animationFrame = useRaf(extrapolateTracks ? 1e11 : 0);
+  const radarRefreshRate = serverStore().refreshRate;
+  const [entities, tracks, selectedEntity] = useMemo(() => {
+    if (extrapolateTracks) {
+      const [entities, tracks] = extrapolate([stateEntities, stateTracks], radarRefreshRate);
+      if (stateSelectedEntity) {
+        // Extrapolated data, and selected entity needs to be updated
+        return [entities, tracks, entities.get(stateSelectedEntity.id)];
+      }
+      // Extrapolated data with no selection
+      return [entities, tracks];
+    }
+    // No extrapolation, render data from server
+    return [stateEntities, stateTracks, stateSelectedEntity];
+  }, [animationFrame, stateTracks]);
 
   // TODO: server should set coalition
   const bullsEntity = entities.find(
@@ -586,8 +615,6 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
   );
 
   const isSnapPressed = useKeyPress("s");
-
-  const settings = settingsStore();
 
   useEffect(() => {
     if (!mapContainer.current || map.current !== null) {
@@ -1123,6 +1150,8 @@ export function Map({ dcsMap }: { dcsMap: DCSMap }) {
       {map.current && (
         <MapRadarTracks
           map={map.current}
+          entities={entities}
+          tracks={tracks}
           selectedEntityId={selectedEntity ? selectedEntity.id : null}
         />
       )}
