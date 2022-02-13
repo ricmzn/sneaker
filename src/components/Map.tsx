@@ -73,6 +73,7 @@ function MapRadarTracks({
   tracks: Immutable.Map<number, EntityTrackPing[]>,
   selectedEntityId: number | null;
 }) {
+  const radarRefreshRate = serverStore().refreshRate;
   const radarTracks = trackStore((state) => state.tracks.entrySeq().toArray());
   const triggeredEntityIds = alertStore((state) =>
     state.triggeredEntities.keySeq().toSet()
@@ -432,12 +433,15 @@ function MapRadarTracks({
             }
           }
         } else {
+          const maxTrackAge = trailLength * radarRefreshRate * 1000;
           for (
             let index = 0;
             index < track.length && index < trailLength;
             index++
           ) {
             const trackPoint = track[index];
+            const lastReceived = track[0].time;
+            const trackAge = lastReceived - trackPoint.time;
             const trackPointGeo = trackPointGeos[index];
             syncVisibility(trackPointGeo, true);
             trackPointGeo.setCoordinates([
@@ -460,7 +464,7 @@ function MapRadarTracks({
               markerHeight: 5,
               markerDx: 0,
               markerDy: 0,
-              markerFillOpacity: (100 - index * 10) / 100,
+              markerFillOpacity: 1 - trackAge / maxTrackAge,
             });
           }
         }
