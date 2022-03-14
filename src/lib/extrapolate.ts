@@ -121,6 +121,7 @@ export default function extrapolate(
       longitude: lastPing.position[1],
       latitude: lastPing.position[0],
       altitude: lastPing.altitude,
+      heading: lastPing.heading,
       created_at: entity.createdAt,
       updated_at: entity.updatedAt,
     });
