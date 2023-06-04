@@ -24,5 +24,6 @@ RUN go build cmd/sneaker-server/main.go
 
 FROM debian
 COPY --from=server /build/main /bin/sneaker
-CMD ["sneaker", "--bind", "0.0.0.0:80", "--config", "/etc/sneaker/config.json"]
+ENTRYPOINT ["sneaker"]
+CMD ["--bind", "0.0.0.0:80", "--config", "/etc/sneaker/config.json"]
 EXPOSE 80/tcp
