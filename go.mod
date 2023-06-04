@@ -2,6 +2,8 @@ module github.com/b1naryth1ef/sneaker
 
 go 1.17
 
+replace github.com/b1naryth1ef/jambon => ./jambon
+
 require (
 	github.com/alioygur/gores v1.2.2
 	github.com/b1naryth1ef/jambon v0.0.4-0.20220109012622-92223168294c

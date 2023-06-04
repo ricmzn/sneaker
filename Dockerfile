@@ -15,6 +15,7 @@ WORKDIR /build
 
 COPY cmd cmd
 COPY server server
+COPY jambon jambon
 COPY assets.go go.mod go.sum ./
 COPY --from=frontend /build/dist dist
 

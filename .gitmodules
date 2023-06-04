@@ -1,0 +1,3 @@
+[submodule "jambon"]
+	path = jambon
+	url = git@github.com:team-limakilo/jambon.git
