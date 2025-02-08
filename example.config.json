@@ -2,7 +2,7 @@
   "servers": [
     {
       "name": "myserver",
-      "hostname": "tacview.myserver.com",
+      "hostname": "tacview.localhost.localdomain",
       "port": 12345,
       "radar_refresh_rate": 5,
       "enable_friendly_ground_units": true,
