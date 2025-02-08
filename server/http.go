@@ -233,11 +233,18 @@ func (h *httpServer) streamServerEvents(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func serveIndex(server *httpServer) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		server.serveEmbeddedFile("index.html", w, r)
+	}
+}
+
 func Run(config *Config) error {
 	server := newHttpServer(config)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(middleware.GetHead)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -246,9 +253,8 @@ func Run(config *Config) error {
 		MaxAge:           300,
 	}))
 
-	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		server.serveEmbeddedFile("index.html", w, r)
-	})
+	r.Get("/", serveIndex(server))
+	r.Get("/servers/*", serveIndex(server))
 	r.Get("/static/*", server.serveEmbeddedStaticAssets)
 	r.Get("/api/servers", server.getServerList)
 	r.Get("/api/servers/{serverName}", server.getServer)
@@ -269,5 +275,6 @@ func Run(config *Config) error {
 		server.getOrCreateSession(serverConfig.Name)
 	}
 
+	log.Printf("Serving Lardoon on http://%v", config.Bind)
 	return http.ListenAndServe(config.Bind, r)
 }
