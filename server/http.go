@@ -275,6 +275,6 @@ func Run(config *Config) error {
 		server.getOrCreateSession(serverConfig.Name)
 	}
 
-	log.Printf("Serving Lardoon on http://%v", config.Bind)
+	log.Printf("Serving Sneaker on http://%v", config.Bind)
 	return http.ListenAndServe(config.Bind, r)
 }
